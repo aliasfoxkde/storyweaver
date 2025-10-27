@@ -1,0 +1,8 @@
+
+{
+  "name": "StoryWeaver AI",
+  "description": "An interactive storytelling app for kids. It uses AI to write stories, generate unique illustrations for each page, and read the story aloud.",
+   "requestFramePermissions": [
+    "microphone"
+  ]
+}

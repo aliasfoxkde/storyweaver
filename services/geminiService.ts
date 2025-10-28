@@ -7,9 +7,16 @@ import { KokoroTTS } from "kokoro-js";
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
 // Using models with better free tier quotas
-const storyGenerationModel = "gemini-1.5-flash"; // Better quota than 2.5-pro
-const imageGenerationModel = "gemini-2.0-flash-exp"; // Alternative with higher limits
-const speechGenerationModel = "gemini-2.0-flash-exp"; // Using same model for TTS
+// Updated to use correct model names for @google/genai v1.27.0
+const storyGenerationModel = "gemini-2.0-flash-001"; // Current stable model for text
+const imageGenerationModel = "gemini-2.0-flash-preview-image-generation"; // Preview model for image generation
+const speechGenerationModel = "gemini-2.0-flash-001"; // Using same model for TTS
+
+// Log initialization for debugging
+console.log('🔧 Gemini Service Initialized');
+console.log('📝 Story Generation Model:', storyGenerationModel);
+console.log('🖼️  Image Generation Model (Fallback):', imageGenerationModel);
+console.log('🔊 Speech Generation Model:', speechGenerationModel);
 
 const storyPromptSystemInstruction = `You are a master storyteller for children. 
 Your stories are imaginative, engaging, and always age-appropriate.
@@ -35,24 +42,43 @@ const getStoryChat = () => {
 }
 
 export const generateStorySegment = async (prompt: string): Promise<{storyText: string, imagePrompt: string}> => {
+    console.log('📖 Generating story segment...');
+    console.log('   User prompt:', prompt);
+    console.log('   Using model:', storyGenerationModel);
+
     try {
         // Try primary model first
         const chat = getStoryChat();
+        console.log('   Chat instance created, sending message...');
+
         const response = await chat.sendMessage({ message: prompt });
+        console.log('   ✓ Response received from API');
 
         const text = response.text.trim();
         const parts = text.split("IMAGE PROMPT:");
 
         if (parts.length < 2) {
-            console.error("Model did not return an image prompt correctly.");
+            console.error("   ⚠️  Model did not return an image prompt correctly.");
+            console.error("   Response text:", text);
             return { storyText: text, imagePrompt: `A beautiful and magical illustration of: ${text}` };
         }
 
         const storyText = parts[0].trim();
         const imagePrompt = parts[1].trim();
 
+        console.log('   ✓ Story segment generated successfully');
+        console.log('   Story length:', storyText.length, 'characters');
+        console.log('   Image prompt:', imagePrompt.substring(0, 50) + '...');
+
         return { storyText, imagePrompt };
     } catch (error: any) {
+        console.error('❌ Error generating story segment:');
+        console.error('   Error name:', error?.name);
+        console.error('   Error message:', error?.message);
+        console.error('   Error status:', error?.status);
+        console.error('   Error code:', error?.code);
+        console.error('   Full error:', JSON.stringify(error, null, 2));
+
         // Check if it's a quota exhaustion error
         const isQuotaError =
             error?.status === 'RESOURCE_EXHAUSTED' ||
@@ -61,7 +87,7 @@ export const generateStorySegment = async (prompt: string): Promise<{storyText: 
             error?.status === 429;
 
         if (isQuotaError) {
-            console.warn('Primary model quota exhausted, using fallback model (gemma-3-27b-it)...');
+            console.warn('⚠️  Primary model quota exhausted, using fallback model (gemma-3-27b-it)...');
 
             // Retry with fallback model (gemma-3-27b-it has 14,400 free requests/day)
             try {
@@ -73,12 +99,13 @@ export const generateStorySegment = async (prompt: string): Promise<{storyText: 
                     }
                 });
 
+                console.log('   Sending message to fallback model...');
                 const fallbackResponse = await fallbackChat.sendMessage({ message: prompt });
                 const text = fallbackResponse.text.trim();
                 const parts = text.split("IMAGE PROMPT:");
 
                 if (parts.length < 2) {
-                    console.error("Fallback model did not return an image prompt correctly.");
+                    console.error("   ⚠️  Fallback model did not return an image prompt correctly.");
                     return { storyText: text, imagePrompt: `A beautiful and magical illustration of: ${text}` };
                 }
 
@@ -86,16 +113,18 @@ export const generateStorySegment = async (prompt: string): Promise<{storyText: 
                 const imagePrompt = parts[1].trim();
 
                 // Notify user that fallback was used
-                console.info('✓ Story generated using fallback model');
+                console.info('   ✓ Story generated using fallback model');
 
                 return { storyText, imagePrompt };
-            } catch (fallbackError) {
-                console.error('Fallback model also failed:', fallbackError);
+            } catch (fallbackError: any) {
+                console.error('❌ Fallback model also failed:');
+                console.error('   Error:', JSON.stringify(fallbackError, null, 2));
                 throw new Error('Both primary and fallback models failed. Please try again later.');
             }
         }
 
-        // If it's not a quota error, rethrow the original error
+        // If it's not a quota error, rethrow the original error with more context
+        console.error('❌ Non-quota error detected, rethrowing...');
         throw error;
     }
 };
@@ -105,9 +134,14 @@ export const startNewStory = () => {
 };
 
 export const generateImage = async (prompt: string): Promise<string> => {
+    console.log('🖼️  Generating image...');
+    console.log('   Prompt:', prompt.substring(0, 100) + '...');
+
     try {
         // Use NanoGPT API for image generation (free tier, no quota limits)
-        const response = await fetch('https://nano-gpt.com/api/v1/images/generations', {
+        console.log('   Using NanoGPT API (qwen-image model)');
+        console.log('   API Endpoint: https://nano-gpt.com/v1/images/generations');
+        const response = await fetch('https://nano-gpt.com/v1/images/generations', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${process.env.NANO_GPT_API_KEY}`,
@@ -125,6 +159,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('   ❌ NanoGPT API error:', response.status, errorText);
             throw new Error(`NanoGPT API error: ${response.status} - ${errorText}`);
         }
 
@@ -132,42 +167,59 @@ export const generateImage = async (prompt: string): Promise<string> => {
 
         // Extract base64 image data from response
         if (data.data && data.data[0] && data.data[0].b64_json) {
+            console.log('   ✓ Image generated successfully (base64 format)');
             return data.data[0].b64_json;
         }
 
         // If URL format was returned instead, fetch and convert to base64
         if (data.data && data.data[0] && data.data[0].url) {
+            console.log('   Converting URL to base64...');
             const imageResponse = await fetch(data.data[0].url);
             const blob = await imageResponse.blob();
-            return await blobToBase64(blob);
+            const base64 = await blobToBase64(blob);
+            console.log('   ✓ Image generated successfully (URL converted to base64)');
+            return base64;
         }
 
         throw new Error("No image data returned from NanoGPT API.");
     } catch (error) {
-        console.error("NanoGPT image generation failed, falling back to Gemini:", error);
+        console.error("❌ NanoGPT image generation failed, falling back to Gemini:", error);
 
         // Fallback to Gemini if NanoGPT fails
-        const response = await ai.models.generateContent({
-            model: imageGenerationModel,
-            contents: {
-              parts: [
-                {
-                  text: prompt,
+        try {
+            console.log('   Using Gemini fallback (', imageGenerationModel, ')');
+            const response = await ai.models.generateContent({
+                model: imageGenerationModel,
+                contents: {
+                  parts: [
+                    {
+                      text: prompt,
+                    },
+                  ],
                 },
-              ],
-            },
-            config: {
-                responseModalities: [Modality.IMAGE],
-            },
-        });
+                config: {
+                    responseModalities: [Modality.IMAGE],
+                },
+            });
 
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return part.inlineData.data;
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    console.log('   ✓ Image generated successfully (Gemini fallback)');
+                    return part.inlineData.data;
+                }
             }
-        }
 
-        throw new Error("No image data returned from API.");
+            console.error('   ❌ No image data returned from Gemini API');
+            throw new Error("No image data returned from Gemini API.");
+        } catch (geminiError: any) {
+            console.error('   ❌ Gemini fallback also failed:', geminiError);
+            console.error('   Error details:', JSON.stringify(geminiError, null, 2));
+
+            // Return a placeholder base64 image (1x1 transparent PNG) to prevent UI breakage
+            console.warn('   ⚠️  Returning placeholder image due to both API failures');
+            // This is a 1x1 transparent PNG in base64
+            return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+        }
     }
 };
 

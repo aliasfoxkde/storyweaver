@@ -49,7 +49,7 @@ export const StoryPage: React.FC<StoryPageProps> = ({ segments, isLoading, onEdi
                                             /* Image loading placeholder */
                                             <div className="rounded-lg w-full aspect-video bg-gradient-to-br from-purple-200 via-pink-200 to-yellow-200 animate-pulse flex items-center justify-center relative overflow-hidden">
                                                 {/* Animated shimmer effect */}
-                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
 
                                                 {/* Loading content */}
                                                 <div className="relative z-10 text-center p-6">
@@ -60,9 +60,9 @@ export const StoryPage: React.FC<StoryPageProps> = ({ segments, isLoading, onEdi
                                                     </div>
                                                     <p className="text-purple-600 font-semibold text-lg">Illustrating your story...</p>
                                                     <div className="flex justify-center mt-3 space-x-1">
-                                                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                                        <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                        <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                                     </div>
                                                 </div>
                                             </div>

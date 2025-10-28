@@ -34,7 +34,9 @@ export const InteractiveBook: React.FC<InteractiveBookProps> = ({ storySegments,
   };
 
   const handlePlayAudio = useCallback(async () => {
-      if (isPlaying || isTTSLoading || !currentPageData) return;
+      if (isPlaying || isTTSLoading || !currentPageData) {
+        return;
+      }
       setIsTTSLoading(true);
       try {
         const audioData = await generateSpeech(currentPageData.text);
@@ -77,7 +79,7 @@ export const InteractiveBook: React.FC<InteractiveBookProps> = ({ storySegments,
                 ) : (
                     /* Image loading placeholder */
                     <div className="w-full h-full bg-gradient-to-br from-purple-200 via-pink-200 to-yellow-200 animate-pulse flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
                         <div className="relative z-10 text-center p-6">
                             <div className="mb-4">
                                 <svg className="w-16 h-16 mx-auto text-purple-400 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">

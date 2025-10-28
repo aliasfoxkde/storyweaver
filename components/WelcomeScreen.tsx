@@ -13,7 +13,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
           StoryWeaver AI
         </h1>
         <p className="text-gray-700 text-lg md:text-2xl mb-8">
-          Let's create a magical story together! I'll draw pictures and read every page for you.
+          Let&apos;s create a magical story together! I&apos;ll draw pictures and read every page for you.
         </p>
         <p className="text-gray-600 text-base md:text-xl mb-10">
           How should our story begin?

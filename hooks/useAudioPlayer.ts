@@ -42,15 +42,15 @@ export const useAudioPlayer = () => {
         // Initialize AudioContext on the client-side after the first user interaction (or component mount)
         // Suspended by default and needs to be resumed by a user gesture.
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-        
+
         return () => {
-            audioContextRef.current?.close();
+            void audioContextRef.current?.close();
         };
     }, []);
 
     const playAudio = useCallback(async (base64Audio: string) => {
         const audioContext = audioContextRef.current;
-        if (!audioContext) return;
+        if (!audioContext) {return;}
 
         // Resume context if it's suspended
         if (audioContext.state === 'suspended') {

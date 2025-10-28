@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { SendIcon, MicrophoneIcon } from './IconComponents';
-import { startRecording, stopRecording, transcribeAudio, isRecording, isMicrophoneAvailable } from '../services/whisperService';
+import { startRecording, stopRecording, transcribeAudio, isMicrophoneAvailable } from '../services/whisperService';
+import { logger } from '../lib/logger';
 
 interface ChatInterfaceProps {
   onSubmit: (prompt: string) => void;
@@ -16,7 +17,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSubmit, isLoadin
 
   // Check microphone availability on mount
   useEffect(() => {
-    isMicrophoneAvailable().then(setMicAvailable);
+    void isMicrophoneAvailable().then(setMicAvailable);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,16 +35,25 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSubmit, isLoadin
       setIsTranscribing(true);
 
       try {
-        console.log('🎤 Stopping recording and starting transcription...');
+        logger.info('Stopping recording and starting transcription', { operation: 'STT' });
         const audioBlob = await stopRecording();
-        console.log('🎤 Audio blob received, size:', audioBlob.size, 'bytes');
+        logger.debug('Audio blob received', {
+          operation: 'STT',
+          metadata: { size: audioBlob.size, type: audioBlob.type }
+        });
 
         const text = await transcribeAudio(audioBlob);
-        console.log('🎤 Transcription successful:', text);
+        logger.info('Transcription successful', {
+          operation: 'STT',
+          metadata: { textLength: text.length }
+        });
 
         setPrompt(text);
       } catch (error) {
-        console.error('Voice input failed:', error);
+        logger.error('Voice input failed', {
+          operation: 'STT',
+          metadata: { error: error instanceof Error ? error.message : String(error) }
+        });
 
         // Provide more specific error messages
         let errorMessage = 'Voice input failed. Please try again or type your prompt.';
@@ -64,12 +74,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSubmit, isLoadin
     } else {
       // Start recording
       try {
-        console.log('🎤 Starting recording...');
+        logger.info('Starting recording', { operation: 'STT' });
         await startRecording();
         setIsRecordingAudio(true);
-        console.log('🎤 Recording started successfully');
+        logger.info('Recording started successfully', { operation: 'STT' });
       } catch (error) {
-        console.error('Failed to start recording:', error);
+        logger.error('Failed to start recording', {
+          operation: 'STT',
+          metadata: { error: error instanceof Error ? error.message : String(error) }
+        });
 
         let errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
         if (error instanceof Error && error.message.includes('not available')) {
@@ -82,9 +95,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSubmit, isLoadin
   };
 
   const getPlaceholder = () => {
-    if (isLoading) return "The storyteller is thinking...";
-    if (isTranscribing) return "Transcribing your voice...";
-    if (isRecordingAudio) return "Listening... (click mic to stop)";
+    if (isLoading) {
+      return "The storyteller is thinking...";
+    }
+    if (isTranscribing) {
+      return "Transcribing your voice...";
+    }
+    if (isRecordingAudio) {
+      return "Listening... (click mic to stop)";
+    }
     return "What should happen next?";
   };
 

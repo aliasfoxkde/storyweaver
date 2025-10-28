@@ -7,7 +7,10 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
         const img = new Image();
         img.crossOrigin = 'Anonymous';
         img.onload = () => resolve(img);
-        img.onerror = (err) => reject(err);
+        img.onerror = (err) => {
+            const errorMessage = err instanceof Error ? err.message : (typeof err === 'string' ? err : 'Unknown error');
+            reject(new Error(`Failed to load image: ${errorMessage}`));
+        };
         img.src = url;
     });
 };

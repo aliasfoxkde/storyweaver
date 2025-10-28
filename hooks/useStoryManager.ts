@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { StorySegment } from '../types';
-import { generateStorySegment, generateStorySegmentStream, generateImage, editImage, startNewStory as resetStoryChat } from '../services/geminiService';
+import { generateStorySegmentStream, generateImage, editImage, startNewStory as resetStoryChat } from '../services/geminiService';
 
 export const useStoryManager = () => {
     const [storySegments, setStorySegments] = useState<StorySegment[]>([]);
@@ -33,7 +33,7 @@ export const useStoryManager = () => {
         setLastRequestTime(now);
 
         const userSegment: StorySegment = {
-            id: Date.now().toString() + '-user',
+            id: `${Date.now().toString()  }-user`,
             text: userPrompt,
             isUser: true,
         };
@@ -41,7 +41,7 @@ export const useStoryManager = () => {
         setStorySegments(prev => [...prev, userSegment]);
 
         // Create a placeholder AI segment for streaming
-        const aiSegmentId = Date.now().toString() + '-ai';
+        const aiSegmentId = `${Date.now().toString()  }-ai`;
         const placeholderSegment: StorySegment = {
             id: aiSegmentId,
             text: '',
@@ -106,7 +106,7 @@ export const useStoryManager = () => {
     
     const updateImage = useCallback(async (segmentId: string, editPrompt: string) => {
         const segmentToUpdate = storySegments.find(s => s.id === segmentId);
-        if (!segmentToUpdate || !segmentToUpdate.imageUrl) return;
+        if (!segmentToUpdate?.imageUrl) {return;}
 
         setIsLoading(true);
         setError(null);

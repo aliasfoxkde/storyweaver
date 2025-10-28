@@ -5,13 +5,13 @@ export const LoadingPencil: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center p-8">
       <div className="pencil">
-        <div className="pencil__ball-point"></div>
-        <div className="pencil__cap"></div>
-        <div className="pencil__cap-base"></div>
-        <div className="pencil__middle"></div>
-        <div className="pencil__eraser"></div>
+        <div className="pencil__ball-point" />
+        <div className="pencil__cap" />
+        <div className="pencil__cap-base" />
+        <div className="pencil__middle" />
+        <div className="pencil__eraser" />
       </div>
-      <div className="line"></div>
+      <div className="line" />
       <p className="text-purple-600 mt-4 text-lg font-medium">Drawing the next page...</p>
       <style>{`
         .pencil {

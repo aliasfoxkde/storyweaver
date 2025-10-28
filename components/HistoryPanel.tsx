@@ -19,7 +19,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ segments, isOpen }) 
                         <p className="text-sm">{segment.text}</p>
                     </div>
                 ))}
-                {segments.length === 0 && <p className="text-gray-500">Your adventure hasn't begun yet!</p>}
+                {segments.length === 0 && <p className="text-gray-500">Your adventure hasn&apos;t begun yet!</p>}
             </div>
         </div>
     </aside>

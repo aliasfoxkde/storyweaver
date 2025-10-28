@@ -104,7 +104,8 @@ export const stopRecording = async (): Promise<Blob> => {
         };
         
         mediaRecorder.onerror = (error) => {
-            reject(error);
+            const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error');
+            reject(new Error(`MediaRecorder error: ${errorMessage}`));
         };
         
         mediaRecorder.stop();
@@ -170,7 +171,7 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
 /**
  * Record audio and transcribe in one step
  */
-export const recordAndTranscribe = async (durationMs: number = 5000): Promise<string> => {
+export const recordAndTranscribe = async (durationMs = 5000): Promise<string> => {
     await startRecording();
     
     // Wait for specified duration

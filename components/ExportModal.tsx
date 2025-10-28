@@ -33,7 +33,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, onDownloadPdf
             <PdfIcon />
             <span className="ml-4 font-semibold">{isExporting ? 'Creating PDF...' : 'Download as PDF'}</span>
             {isExporting && (
-                <div className="ml-4 w-5 h-5 border-2 border-pink-700 border-t-transparent rounded-full animate-spin"></div>
+                <div className="ml-4 w-5 h-5 border-2 border-pink-700 border-t-transparent rounded-full animate-spin" />
             )}
           </button>
         </div>

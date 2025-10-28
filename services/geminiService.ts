@@ -1,10 +1,9 @@
 
 import { GoogleGenAI, Modality, Chat } from "@google/genai";
-import type { StorySegment } from "../types";
 import { KokoroTTS } from "kokoro-js";
 
 // FIX: Initialize GoogleGenAI with API Key from environment variables.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 // Using models with better free tier quotas
 // Updated to use correct model names for @google/genai v1.27.0
@@ -68,7 +67,7 @@ export const generateStorySegment = async (prompt: string): Promise<{storyText: 
 
         console.log('   ✓ Story segment generated successfully');
         console.log('   Story length:', storyText.length, 'characters');
-        console.log('   Image prompt:', imagePrompt.substring(0, 50) + '...');
+        console.log('   Image prompt:', `${imagePrompt.substring(0, 50)  }...`);
 
         return { storyText, imagePrompt };
     } catch (error: any) {
@@ -187,7 +186,7 @@ export async function* generateStorySegmentStream(prompt: string): AsyncGenerato
 
         console.log('   ✓ Story segment generated successfully');
         console.log('   Story length:', storyText.length, 'characters');
-        console.log('   Image prompt:', imagePrompt.substring(0, 50) + '...');
+        console.log('   Image prompt:', `${imagePrompt.substring(0, 50)  }...`);
 
         // Yield final result with parsed data
         yield {
@@ -209,7 +208,7 @@ export const startNewStory = () => {
 
 export const generateImage = async (prompt: string): Promise<string> => {
     console.log('🖼️  Generating image...');
-    console.log('   Prompt:', prompt.substring(0, 100) + '...');
+    console.log('   Prompt:', `${prompt.substring(0, 100)  }...`);
 
     try {
         // Use NanoGPT API for image generation (free tier, no quota limits)
@@ -240,13 +239,13 @@ export const generateImage = async (prompt: string): Promise<string> => {
         const data = await response.json();
 
         // Extract base64 image data from response
-        if (data.data && data.data[0] && data.data[0].b64_json) {
+        if (data.data?.[0]?.b64_json) {
             console.log('   ✓ Image generated successfully (base64 format)');
             return data.data[0].b64_json;
         }
 
         // If URL format was returned instead, fetch and convert to base64
-        if (data.data && data.data[0] && data.data[0].url) {
+        if (data.data?.[0]?.url) {
             console.log('   Converting URL to base64...');
             const imageResponse = await fetch(data.data[0].url);
             const blob = await imageResponse.blob();
@@ -413,17 +412,17 @@ const audioToWavBase64 = (audioData: Float32Array, sampleRate: number): string =
 
     // Convert float32 audio data to int16 PCM
     let offset = 44;
-    for (let i = 0; i < audioData.length; i++) {
-        const sample = Math.max(-1, Math.min(1, audioData[i]));
-        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+    for (const sample of audioData) {
+        const clampedSample = Math.max(-1, Math.min(1, sample));
+        view.setInt16(offset, clampedSample < 0 ? clampedSample * 0x8000 : clampedSample * 0x7FFF, true);
         offset += 2;
     }
 
     // Convert to base64
     const bytes = new Uint8Array(buffer);
     let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
     }
     return btoa(binary);
 };

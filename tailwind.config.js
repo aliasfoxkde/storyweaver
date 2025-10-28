@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Baloo 2', 'cursive'],
+        sans: ['"Baloo 2"', 'cursive'],
       },
     },
   },

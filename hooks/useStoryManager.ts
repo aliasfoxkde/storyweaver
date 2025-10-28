@@ -7,6 +7,8 @@ export const useStoryManager = () => {
     const [storySegments, setStorySegments] = useState<StorySegment[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [lastRequestTime, setLastRequestTime] = useState<number>(0);
+    const MIN_REQUEST_INTERVAL = 3000; // 3 seconds between requests
 
     const startNewStory = useCallback(() => {
         setStorySegments([]);
@@ -16,17 +18,28 @@ export const useStoryManager = () => {
     }, []);
 
     const addStorySegment = useCallback(async (userPrompt: string) => {
+        // Rate limiting check
+        const now = Date.now();
+        const timeSinceLastRequest = now - lastRequestTime;
+
+        if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+            const waitTime = Math.ceil((MIN_REQUEST_INTERVAL - timeSinceLastRequest) / 1000);
+            setError(`Please wait ${waitTime} more second${waitTime > 1 ? 's' : ''} before making another request.`);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
+        setLastRequestTime(now);
 
         const userSegment: StorySegment = {
             id: Date.now().toString() + '-user',
             text: userPrompt,
             isUser: true,
         };
-        
+
         setStorySegments(prev => [...prev, userSegment]);
-        
+
         try {
             const { storyText, imagePrompt } = await generateStorySegment(userPrompt);
             const imageBase64 = await generateImage(imagePrompt);
@@ -42,15 +55,22 @@ export const useStoryManager = () => {
 
             setStorySegments(prev => [...prev, aiSegment]);
 
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to generate story segment:", err);
-            setError("Oh no! The magic ink spilled. Please try again.");
+
+            // Better error handling for quota issues
+            if (err?.status === 'RESOURCE_EXHAUSTED' || err?.message?.includes('quota')) {
+                setError("We've used up our magic for today! Please try again tomorrow or contact support.");
+            } else {
+                setError("Oh no! The magic ink spilled. Please try again.");
+            }
+
             // Remove the user prompt if AI fails
             setStorySegments(prev => prev.slice(0, -1));
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [lastRequestTime]);
     
     const updateImage = useCallback(async (segmentId: string, editPrompt: string) => {
         const segmentToUpdate = storySegments.find(s => s.id === segmentId);

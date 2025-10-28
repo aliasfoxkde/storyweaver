@@ -5,9 +5,10 @@ import type { StorySegment } from "../types";
 // FIX: Initialize GoogleGenAI with API Key from environment variables.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-const storyGenerationModel = "gemini-2.5-pro";
-const imageGenerationModel = "gemini-2.5-flash-image";
-const speechGenerationModel = "gemini-2.5-flash-preview-tts";
+// Using models with better free tier quotas
+const storyGenerationModel = "gemini-1.5-flash"; // Better quota than 2.5-pro
+const imageGenerationModel = "gemini-2.0-flash-exp"; // Alternative with higher limits
+const speechGenerationModel = "gemini-2.0-flash-exp"; // Using same model for TTS
 
 const storyPromptSystemInstruction = `You are a master storyteller for children. 
 Your stories are imaginative, engaging, and always age-appropriate.

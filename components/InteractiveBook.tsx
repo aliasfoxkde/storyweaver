@@ -11,6 +11,7 @@ interface InteractiveBookProps {
 
 export const InteractiveBook: React.FC<InteractiveBookProps> = ({ storySegments, onClose }) => {
   const [currentPage, setCurrentPage] = useState(0);
+  const [isTTSLoading, setIsTTSLoading] = useState(false);
   const { playAudio, isPlaying } = useAudioPlayer();
 
   const bookPages = useMemo(
@@ -33,7 +34,8 @@ export const InteractiveBook: React.FC<InteractiveBookProps> = ({ storySegments,
   };
 
   const handlePlayAudio = useCallback(async () => {
-      if (isPlaying || !currentPageData) return;
+      if (isPlaying || isTTSLoading || !currentPageData) return;
+      setIsTTSLoading(true);
       try {
         const audioData = await generateSpeech(currentPageData.text);
         if (audioData) {
@@ -41,8 +43,10 @@ export const InteractiveBook: React.FC<InteractiveBookProps> = ({ storySegments,
         }
       } catch (err) {
           console.error("Failed to play book audio", err);
+      } finally {
+          setIsTTSLoading(false);
       }
-  }, [playAudio, isPlaying, currentPageData]);
+  }, [playAudio, isPlaying, isTTSLoading, currentPageData]);
 
   if (!currentPageData) {
       return (
@@ -69,13 +73,18 @@ export const InteractiveBook: React.FC<InteractiveBookProps> = ({ storySegments,
                  <p className="flex-grow text-gray-700 text-xl md:text-2xl leading-relaxed overflow-y-auto">
                     {currentPageData.text}
                  </p>
-                 <button 
+                 <button
                     onClick={handlePlayAudio}
-                    disabled={isPlaying}
+                    disabled={isPlaying || isTTSLoading}
                     className="mt-4 mx-auto md:mx-0 bg-yellow-400 text-yellow-800 rounded-full p-4 shadow-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition-transform transform hover:scale-110 active:scale-100"
-                    aria-label="Read page aloud"
+                    aria-label={isTTSLoading ? "Loading voice..." : "Read page aloud"}
+                    title={isTTSLoading ? "Loading text-to-speech model..." : "Click to hear the story"}
                 >
-                    <SpeakerIcon />
+                    {isTTSLoading ? (
+                        <span className="text-sm font-semibold">Loading...</span>
+                    ) : (
+                        <SpeakerIcon />
+                    )}
                 </button>
             </div>
       </div>

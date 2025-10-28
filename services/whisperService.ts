@@ -124,20 +124,45 @@ export const isRecording = (): boolean => {
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     try {
         const pipe = await getWhisperPipeline();
-        
-        // Convert blob to array buffer
-        const arrayBuffer = await audioBlob.arrayBuffer();
-        
-        // Transcribe
-        console.log('🎤 Transcribing audio...');
-        const result = await pipe(arrayBuffer);
-        
-        const text = result.text.trim();
-        console.log('✓ Transcription complete:', text);
-        
-        return text;
+
+        // Create a URL for the blob - Whisper pipeline can handle this directly
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        try {
+            // Transcribe using the blob URL
+            console.log('🎤 Transcribing audio...');
+            console.log('   Audio blob size:', audioBlob.size, 'bytes');
+            console.log('   Audio blob type:', audioBlob.type);
+
+            const result = await pipe(audioUrl);
+
+            const text = result.text.trim();
+            console.log('✓ Transcription complete:', text);
+
+            // Clean up the blob URL
+            URL.revokeObjectURL(audioUrl);
+
+            if (!text || text.length === 0) {
+                throw new Error('No speech detected. Please try speaking louder or closer to the microphone.');
+            }
+
+            return text;
+        } catch (error) {
+            // Clean up the blob URL in case of error
+            URL.revokeObjectURL(audioUrl);
+            throw error;
+        }
     } catch (error) {
         console.error('Transcription failed:', error);
+        console.error('Error details:', error);
+
+        // Provide more specific error messages
+        if (error instanceof Error) {
+            if (error.message.includes('No speech detected')) {
+                throw error; // Re-throw our custom error
+            }
+            throw new Error(`Failed to transcribe audio: ${error.message}`);
+        }
         throw new Error('Failed to transcribe audio. Please try again.');
     }
 };

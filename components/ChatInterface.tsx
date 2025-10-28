@@ -34,23 +34,49 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSubmit, isLoadin
       setIsTranscribing(true);
 
       try {
+        console.log('🎤 Stopping recording and starting transcription...');
         const audioBlob = await stopRecording();
+        console.log('🎤 Audio blob received, size:', audioBlob.size, 'bytes');
+
         const text = await transcribeAudio(audioBlob);
+        console.log('🎤 Transcription successful:', text);
+
         setPrompt(text);
       } catch (error) {
         console.error('Voice input failed:', error);
-        alert('Voice input failed. Please try again or type your prompt.');
+
+        // Provide more specific error messages
+        let errorMessage = 'Voice input failed. Please try again or type your prompt.';
+        if (error instanceof Error) {
+          if (error.message.includes('No speech detected')) {
+            errorMessage = 'No speech detected. Please speak louder or closer to the microphone and try again.';
+          } else if (error.message.includes('Failed to load Whisper')) {
+            errorMessage = 'Failed to load speech recognition model. Please check your internet connection and try again.';
+          } else {
+            errorMessage = `Voice input error: ${error.message}`;
+          }
+        }
+
+        alert(errorMessage);
       } finally {
         setIsTranscribing(false);
       }
     } else {
       // Start recording
       try {
+        console.log('🎤 Starting recording...');
         await startRecording();
         setIsRecordingAudio(true);
+        console.log('🎤 Recording started successfully');
       } catch (error) {
         console.error('Failed to start recording:', error);
-        alert('Microphone access denied. Please allow microphone access and try again.');
+
+        let errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+        if (error instanceof Error && error.message.includes('not available')) {
+          errorMessage = 'No microphone detected. Please connect a microphone and try again.';
+        }
+
+        alert(errorMessage);
       }
     }
   };

@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { StorySegment } from '../types';
-import { generateStorySegment, generateImage, editImage, startNewStory as resetStoryChat } from '../services/geminiService';
+import { generateStorySegment, generateStorySegmentStream, generateImage, editImage, startNewStory as resetStoryChat } from '../services/geminiService';
 
 export const useStoryManager = () => {
     const [storySegments, setStorySegments] = useState<StorySegment[]>([]);
@@ -40,20 +40,52 @@ export const useStoryManager = () => {
 
         setStorySegments(prev => [...prev, userSegment]);
 
+        // Create a placeholder AI segment for streaming
+        const aiSegmentId = Date.now().toString() + '-ai';
+        const placeholderSegment: StorySegment = {
+            id: aiSegmentId,
+            text: '',
+            isUser: false,
+            imageUrl: undefined,
+            imagePrompt: undefined,
+        };
+
+        setStorySegments(prev => [...prev, placeholderSegment]);
+
         try {
-            const { storyText, imagePrompt } = await generateStorySegment(userPrompt);
+            let fullStoryText = '';
+            let imagePrompt = '';
+
+            // Stream the story text
+            for await (const chunk of generateStorySegmentStream(userPrompt)) {
+                if (chunk.textChunk) {
+                    fullStoryText += chunk.textChunk;
+
+                    // Update the segment with streaming text
+                    setStorySegments(prev => prev.map(seg =>
+                        seg.id === aiSegmentId
+                            ? { ...seg, text: fullStoryText }
+                            : seg
+                    ));
+                }
+
+                if (chunk.isComplete && chunk.storyText && chunk.imagePrompt) {
+                    fullStoryText = chunk.storyText;
+                    imagePrompt = chunk.imagePrompt;
+                }
+            }
+
+            // Generate image after text is complete
+            console.log('📖 Story text complete, generating image...');
             const imageBase64 = await generateImage(imagePrompt);
             const imageUrl = `data:image/png;base64,${imageBase64}`;
 
-            const aiSegment: StorySegment = {
-                id: Date.now().toString() + '-ai',
-                text: storyText,
-                isUser: false,
-                imageUrl: imageUrl,
-                imagePrompt: imagePrompt,
-            };
-
-            setStorySegments(prev => [...prev, aiSegment]);
+            // Update segment with final image
+            setStorySegments(prev => prev.map(seg =>
+                seg.id === aiSegmentId
+                    ? { ...seg, text: fullStoryText, imageUrl, imagePrompt }
+                    : seg
+            ));
 
         } catch (err: any) {
             console.error("Failed to generate story segment:", err);
@@ -65,8 +97,8 @@ export const useStoryManager = () => {
                 setError("Oh no! The magic ink spilled. Please try again.");
             }
 
-            // Remove the user prompt if AI fails
-            setStorySegments(prev => prev.slice(0, -1));
+            // Remove both user prompt and placeholder AI segment if generation fails
+            setStorySegments(prev => prev.slice(0, -2));
         } finally {
             setIsLoading(false);
         }

@@ -67,7 +67,27 @@ export const InteractiveBook: React.FC<InteractiveBookProps> = ({ storySegments,
 
       <div className="w-full max-w-5xl aspect-[4/3] bg-white rounded-2xl shadow-2xl p-6 md:p-8 flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 relative animate-fade-in-up">
             <div className="w-full md:w-1/2 h-1/2 md:h-full bg-gray-100 rounded-lg overflow-hidden">
-                <img src={currentPageData.imageUrl!} alt="Story illustration" className="w-full h-full object-cover"/>
+                {currentPageData.imageUrl ? (
+                    <img
+                        src={currentPageData.imageUrl}
+                        alt="Story illustration"
+                        className="w-full h-full object-cover opacity-0 animate-fade-in"
+                        style={{ animation: 'fadeIn 0.5s ease-in-out forwards' }}
+                    />
+                ) : (
+                    /* Image loading placeholder */
+                    <div className="w-full h-full bg-gradient-to-br from-purple-200 via-pink-200 to-yellow-200 animate-pulse flex items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                        <div className="relative z-10 text-center p-6">
+                            <div className="mb-4">
+                                <svg className="w-16 h-16 mx-auto text-purple-400 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <p className="text-purple-600 font-semibold text-lg">Illustrating your story...</p>
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center text-center md:text-left relative">
                  <p className="flex-grow text-gray-700 text-xl md:text-2xl leading-relaxed overflow-y-auto">

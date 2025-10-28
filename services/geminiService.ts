@@ -129,6 +129,80 @@ export const generateStorySegment = async (prompt: string): Promise<{storyText: 
     }
 };
 
+/**
+ * Generate story segment with streaming support
+ * Yields text chunks as they arrive from the API
+ */
+export async function* generateStorySegmentStream(prompt: string): AsyncGenerator<{
+    textChunk?: string;
+    storyText?: string;
+    imagePrompt?: string;
+    isComplete: boolean;
+}> {
+    console.log('📖 Generating story segment (streaming)...');
+    console.log('   User prompt:', prompt);
+    console.log('   Using model:', storyGenerationModel);
+
+    try {
+        // Try primary model first
+        const chat = getStoryChat();
+        console.log('   Chat instance created, sending message...');
+
+        const stream = await chat.sendMessageStream({ message: prompt });
+        console.log('   ✓ Stream started');
+
+        let fullText = '';
+
+        // Stream text chunks
+        for await (const chunk of stream) {
+            const chunkText = chunk.text || '';
+            fullText += chunkText;
+
+            // Yield each chunk as it arrives
+            yield {
+                textChunk: chunkText,
+                isComplete: false
+            };
+        }
+
+        console.log('   ✓ Stream complete, full text length:', fullText.length);
+
+        // Parse the complete response
+        const text = fullText.trim();
+        const parts = text.split("IMAGE PROMPT:");
+
+        if (parts.length < 2) {
+            console.error("   ⚠️  Model did not return an image prompt correctly.");
+            console.error("   Response text:", text);
+            yield {
+                storyText: text,
+                imagePrompt: `A beautiful and magical illustration of: ${text}`,
+                isComplete: true
+            };
+            return;
+        }
+
+        const storyText = parts[0].trim();
+        const imagePrompt = parts[1].trim();
+
+        console.log('   ✓ Story segment generated successfully');
+        console.log('   Story length:', storyText.length, 'characters');
+        console.log('   Image prompt:', imagePrompt.substring(0, 50) + '...');
+
+        // Yield final result with parsed data
+        yield {
+            storyText,
+            imagePrompt,
+            isComplete: true
+        };
+
+    } catch (error: any) {
+        console.error('❌ Error generating story segment (streaming):');
+        console.error('   Error:', error);
+        throw error;
+    }
+}
+
 export const startNewStory = () => {
     storyChat = null;
 };

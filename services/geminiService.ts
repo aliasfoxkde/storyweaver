@@ -211,88 +211,42 @@ export const generateImage = async (prompt: string): Promise<string> => {
     console.log('   Prompt:', `${prompt.substring(0, 100)  }...`);
 
     try {
-        // Use NanoGPT API for image generation (free tier, no quota limits)
-        console.log('   Using NanoGPT API (qwen-image model)');
-        console.log('   API Endpoint: https://nano-gpt.com/v1/images/generations');
-        const response = await fetch('https://nano-gpt.com/v1/images/generations', {
-            method: 'POST',
+        // Use Pollinations.AI for image generation (free, no auth required, unlimited)
+        console.log('   Using Pollinations.AI (FLUX model)');
+
+        // Encode the prompt for URL
+        const encodedPrompt = encodeURIComponent(prompt);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&enhance=true`;
+
+        console.log('   API Endpoint:', imageUrl.substring(0, 100) + '...');
+
+        const response = await fetch(imageUrl, {
+            method: 'GET',
             headers: {
-                'Authorization': `Bearer ${process.env.NANO_GPT_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'qwen-image',
-                prompt: prompt,
-                n: 1,
-                size: '1024x1024',
-                response_format: 'b64_json', // Get base64 directly
-                user: 'storyweaver-app'
-            })
+                'Accept': 'image/*'
+            }
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('   ❌ NanoGPT API error:', response.status, errorText);
-            throw new Error(`NanoGPT API error: ${response.status} - ${errorText}`);
+            console.error('   ❌ Pollinations.AI API error:', response.status, errorText);
+            throw new Error(`Pollinations.AI API error: ${response.status} - ${errorText}`);
         }
 
-        const data = await response.json();
-
-        // Extract base64 image data from response
-        if (data.data?.[0]?.b64_json) {
-            console.log('   ✓ Image generated successfully (base64 format)');
-            return data.data[0].b64_json;
-        }
-
-        // If URL format was returned instead, fetch and convert to base64
-        if (data.data?.[0]?.url) {
-            console.log('   Converting URL to base64...');
-            const imageResponse = await fetch(data.data[0].url);
-            const blob = await imageResponse.blob();
-            const base64 = await blobToBase64(blob);
-            console.log('   ✓ Image generated successfully (URL converted to base64)');
-            return base64;
-        }
-
-        throw new Error("No image data returned from NanoGPT API.");
+        // Response is a blob (image data)
+        const blob = await response.blob();
+        const base64 = await blobToBase64(blob);
+        console.log('   ✓ Image generated successfully (Pollinations.AI)');
+        console.log('   Image size:', Math.round(base64.length / 1024), 'KB');
+        return base64;
     } catch (error) {
-        console.error("❌ NanoGPT image generation failed, falling back to Gemini:", error);
+        console.error("❌ Pollinations.AI image generation failed:", error);
+        console.error('   Error details:', JSON.stringify(error, null, 2));
 
-        // Fallback to Gemini if NanoGPT fails
-        try {
-            console.log('   Using Gemini fallback (', imageGenerationModel, ')');
-            const response = await ai.models.generateContent({
-                model: imageGenerationModel,
-                contents: {
-                  parts: [
-                    {
-                      text: prompt,
-                    },
-                  ],
-                },
-                config: {
-                    responseModalities: [Modality.IMAGE],
-                },
-            });
-
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    console.log('   ✓ Image generated successfully (Gemini fallback)');
-                    return part.inlineData.data;
-                }
-            }
-
-            console.error('   ❌ No image data returned from Gemini API');
-            throw new Error("No image data returned from Gemini API.");
-        } catch (geminiError: any) {
-            console.error('   ❌ Gemini fallback also failed:', geminiError);
-            console.error('   Error details:', JSON.stringify(geminiError, null, 2));
-
-            // Return a placeholder base64 image (1x1 transparent PNG) to prevent UI breakage
-            console.warn('   ⚠️  Returning placeholder image due to both API failures');
-            // This is a 1x1 transparent PNG in base64
-            return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-        }
+        // Return a placeholder base64 image (1x1 transparent PNG) to prevent UI breakage
+        console.warn('   ⚠️  Returning placeholder image due to API failure');
+        // This is a 1x1 transparent PNG in base64
+        return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
     }
 };
 

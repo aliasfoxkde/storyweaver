@@ -28,7 +28,8 @@ StoryWeaver AI is an interactive storytelling app for kids. It uses AI to write 
 9. **Documentation**: Write comprehensive documentation for the app, including user instructions and developer notes.
 
 ## Improvements
-- [ ] Highlight and stylize the words as they are being read aloud, for the audio narration feature, allowing the child to follow along.
+- [ ] Highlight and stylize the words (a little bit of a wobbly bounch animation) as they are being read aloud, for the audio narration feature, allowing the child to follow along.
+- [ ] Add a "Read Aloud" button to the interactive book view (and start reading by default after the first words are generated)
 
 ## Bugs
 - [ ] When the user clicks "Start Your Story" and then clicks "View Interactive Book" before the story is generated, the app crashes/freezes (prompts to Wait/End page in Chrome, and says it's slowing down Firefox).
@@ -36,3 +37,4 @@ StoryWeaver AI is an interactive storytelling app for kids. It uses AI to write 
 - [ ] Text to speach features are not working.
 - [ ] Image re-generation and image to image editing are not working.
 - [ ] I am unable to close the "History" right click menu and the only way to exit is to refresh the page.
+- [ ] Stories need to develop character personas and keep consistancy between images (with the core system managing the character names, descriptions, personality, look and feel, etc.)

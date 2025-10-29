@@ -3,7 +3,7 @@
 # Production Deployment Verification Script
 # Checks if the CSS fix is deployed to production
 
-PRODUCTION_URL="https://6480a433.storyweaver-8gh.pages.dev/"
+PRODUCTION_URL="https://storyweaver-8gh.pages.dev/"
 
 echo "========================================="
 echo "Production Deployment Verification"
